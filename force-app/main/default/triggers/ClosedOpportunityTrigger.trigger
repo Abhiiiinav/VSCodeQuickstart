@@ -1,17 +1,21 @@
-trigger ClosedOpportunityTrigger on Opportunity (after insert,after update) {
-
-    list<Opportunity> opp=new list<Opportunity>;
-    for(Integer i=0;i<250;i++){
-
-        Opportunity opp=new Opportunity(Name='sasas',CloseDate=date.valueof('2023-01-17'),StageName='Qualification');
-    }
-    for(Opportunity oppr:Trigger.New){
-
-        if(oppr.StageName=='Closed Won'){
-            
-            Task t1=new Task(Subject='Follow Up Test Task',Whatid=oppr.id);
-
-            
+trigger ClosedOpportunityTrigger on Opportunity (after insert, after update) {
+    List<Task> taskList = new List<Task>();   
+    for(Opportunity opp : Trigger.new) {
+        //Only create Follow Up Task only once when Opp StageName is to 'Closed Won' on Create
+        if(Trigger.isInsert) {
+            if(Opp.StageName == 'Closed Won') {
+                taskList.add(new Task(Subject = 'Follow Up Test Task', WhatId = opp.Id));
+            }
         }
+        //Only create Follow Up Task only once when Opp StageName changed to 'Closed Won' on Update
+        if(Trigger.isUpdate) {
+            if(Opp.StageName == 'Closed Won' 
+            && Opp.StageName != Trigger.oldMap.get(opp.Id).StageName) {
+                taskList.add(new Task(Subject = 'Follow Up Test Task', WhatId = opp.Id));
+            }
+        }       
     }
+    if(taskList.size()>0) {        
+        insert taskList;        
+    }    
 }
